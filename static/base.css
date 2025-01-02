@@ -1,0 +1,266 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
+
+body {
+    font-family: 'Open Sans', Arial, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+    background-color: #ffffff; /* Light mode background */
+    color: #000000; /* Default text color */
+}
+
+h1, h2, h3 {
+    font-weight: 600;
+}
+
+p {
+    font-weight: 300;
+}
+
+/* Sidebar Styles */
+.left-sidebar,
+.right-sidebar {
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1030;
+    display: flex;
+    flex-direction: column;
+}
+
+.left-sidebar {
+    width: 15rem;
+    left: 0;
+    background-color: #f8f9fa; /* Light mode */
+    color: #000000;
+}
+
+.right-sidebar {
+    width: 20rem;
+    right: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.left-sidebar a,
+.right-sidebar a {
+    color: inherit; /* Inherit text color */
+    text-decoration: none;
+    display: block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.left-sidebar a:hover,
+.right-sidebar a:hover {
+    background-color: #495057;
+}
+
+/* Responsive Layout */
+@media (max-width: 768px) {
+    .left-sidebar,
+    .right-sidebar {
+        display: none;
+    }
+
+    .content {
+        margin: 0;
+        padding: 10px;
+    }
+}
+
+@media (min-width: 769px) {
+    .left-sidebar {
+        width: 15rem;
+    }
+
+    .right-sidebar {
+        width: 20rem;
+    }
+
+    .content {
+        margin-left: 15rem;
+        margin-right: 20rem;
+    }
+}
+
+/* Content Area */
+.content {
+    margin-left: 15rem;
+    margin-right: 20rem;
+    padding: 20px;
+}
+
+.container-fluid {
+    padding: 20px;
+}
+
+/* Form Styles */
+.form-control,
+.form-select {
+    background-color: #ffffff; /* Default input background */
+    color: #000000; /* Default input text */
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    background-color: #343a40; /* Dark mode input background */
+    color: #ffffff; /* Dark mode input text */
+}
+
+/* Card Styles */
+.card {
+    border: none;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+body:not(.dark-mode) .card {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+body.dark-mode .card {
+    background-color: #1e1e1e; /* Dark background for cards */
+    color: #ffffff; /* Light text color */
+    border: 1px solid #343a40; /* Optional border for contrast */
+}
+/* Buttons */
+.btn {
+    border-radius: 5px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+body.dark-mode .left-sidebar {
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+body.dark-mode .right-sidebar {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+body.dark-mode .left-sidebar a:hover,
+body.dark-mode .right-sidebar a:hover {
+    text-decoration: underline;
+}
+
+/* Shadows */
+.shadow {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Transactions Section */
+section.transactions {
+    max-width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+}
+
+.transaction-list {
+    list-style: none;
+    padding: 0;
+}
+
+.transaction-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.transaction-item .icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+}
+
+.transaction-item .title {
+    flex-grow: 1;
+    font-weight: 500;
+}
+
+.transaction-item .date {
+    color: #6c757d;
+    font-size: 0.8rem;
+    margin-right: 10px;
+}
+
+.transaction-item .amount {
+    font-weight: 600;
+    color: #dc3545;
+}
+
+/* Profile Section */
+.right-sidebar .profile {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.right-sidebar .profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin-right: 10px;
+}
+
+.right-sidebar .transactions,
+.right-sidebar .upcoming {
+    margin-top: 20px;
+}
+
+.right-sidebar h3 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
+
+/* Logout Button */
+.logout-button {
+    margin-top: auto;
+}
+.graph-card {
+    position: absolute;
+    top: 900px; /* Adjust based on your layout */
+    left: 400px; /* Adjust based on your layout */
+    width: 60%; /* Adjust width if needed */
+}

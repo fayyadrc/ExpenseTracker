@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Category-Wise Expenses</h2>
+<div>
+    {{ pie_chart | safe }}
+</div>
+
+<h2>Monthly Expense Trends</h2>
+<div>
+    {{ line_chart | safe }}
+</div>
+
+<h2>Category Expenses (Bar Chart)</h2>
+<div>
+    {{ bar_chart | safe }}
+</div>
+
+
+{% endblock %}
