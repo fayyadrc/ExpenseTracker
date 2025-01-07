@@ -5,25 +5,25 @@
     <div class="row">
         <!-- Main Content -->
         <div class="col-md-12">
-            <!-- Row 1: Current Balance, Transaction Form, and Total Expenses -->
-            <div class="row mb-4">
-                <!-- Current Balance Card -->
+            <div class="row">
+                <!-- Left Column: Current Balance and Transaction Form -->
                 <div class="col-md-4">
+                    <!-- Current Balance Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-body text-center">
                             <h6 class="card-title">Current Balance</h6>
-                            <h3 class="fw-bold">AED {{ balance }}</h3>
+                            <h3 class="fw-bold">AED {{ "%.2f"|format(balance) }}</h3>
                         </div>
                     </div>
 
                     <!-- Transaction Form -->
-                    <div class="card shadow">
+                    <div class="card shadow mb-4">
                         <div class="card-body">
                             <h5 class="card-title text-center">Transaction Form</h5>
-                            <form method="POST" action="{{ url_for('index') }}">
+                            <form method="POST" action="{{ url_for('index') }}" data-action-url="{{ url_for('index') }}">
                                 <div class="mb-3">
                                     <label for="action_type" class="form-label">Action:</label>
-                                    <select class="form-select" id="action_type" name="action_type" required onchange="toggleFields()">
+                                    <select class="form-select" id="action_type" name="action_type">
                                         <option value="" disabled selected>Select action</option>
                                         <option value="transaction">Transaction</option>
                                         <option value="deposit">Deposit</option>
@@ -31,23 +31,10 @@
                                     </select>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="amount" class="form-label">Amount:</label>
-                                    <input type="number" class="form-control" id="amount" name="amount" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="date" class="form-label">Date:</label>
-                                    <input type="date" class="form-control" id="date" name="date" required>
-                                </div>
-
                                 <div id="transaction-fields" style="display: none;">
                                     <div class="mb-3">
-                                        <label for="title" class="form-label">Title:</label>
-                                        <input type="text" class="form-control" id="title" name="title">
-                                    </div>
-                                    <div class="mb-3">
                                         <label for="category" class="form-label">Category:</label>
-                                        <select class="form-select" id="category" name="category">
+                                        <select class="form-select" id="category" name="category" >
                                             <option value="" disabled selected>Select a category</option>
                                             <option value="Food">🍔 Food</option>
                                             <option value="Transportation">🚗 Transportation</option>
@@ -58,6 +45,20 @@
                                             <option value="Other">⚡️ Other</option>
                                         </select>
                                     </div>
+                                    <div class="mb-3">
+                                        <label for="title" class="form-label">Title:</label>
+                                        <input type="text" class="form-control" id="title" name="title">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Amount:</label>
+                                    <input type="number" class="form-control" id="amount" name="amount" >
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="date" class="form-label">Date:</label>
+                                    <input type="date" class="form-control" id="date" name="date" >
                                 </div>
 
                                 <div id="deposit-withdraw-fields" style="display: none;">
@@ -76,22 +77,21 @@
                     </div>
                 </div>
 
-                <!-- Total Expenses Card -->
-                <div class="col-md-4">
+                <!-- Right Column: Total Expenses and Graph (Wider) -->
+                <div class="col-md-8">
+                    <!-- Total Expenses Card -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-body text-center">
                             <h6 class="card-title">Total Expenses</h6>
                             <h3 class="fw-bold">AED {{ "%.2f"|format(total_expenses) }}</h3>
                         </div>
                     </div>
-                </div>
 
-                <!-- Graph Card -->
-                <div class="col-md-8 graph-card">
+                    <!-- Graph Card -->
                     <div class="card shadow-sm">
                         <div class="card-body">
-                            <h5 class="card-title">Expense Trends</h5>
-                            {{ line_chart | safe }}
+                            <h5 class="card-title"></h5>
+                            {{ pie_chart | safe }}
                         </div>
                     </div>
                 </div>

@@ -1,7 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
-
 <h2 class="mb-4">Transaction History</h2>
+
+<!-- Filter Controls -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <label for="filter-category" class="form-label">Category</label>
+        <select id="filter-category" class="form-select">
+            <option value="">All Categories</option>
+            {% for category in unique_categories %}
+            <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label for="filter-date-start" class="form-label">Start Date</label>
+        <input type="date" id="filter-date-start" class="form-control">
+    </div>
+    <div class="col-md-4">
+        <label for="filter-date-end" class="form-label">End Date</label>
+        <input type="date" id="filter-date-end" class="form-control">
+    </div>
+</div>
+
+<!-- Expenses Table -->
 <table class="table table-striped table-bordered">
     <thead class="table-primary">
         <tr>
@@ -11,7 +33,7 @@
             <th>Date</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="expenses-table-body">
         {% for expense in expenses %}
         <tr>
             <td>{{ expense.Amount }}</td>
@@ -26,14 +48,36 @@
 <div class="alert alert-info text-center">
     No expenses recorded yet.
 </div>
-<h2>Expenses by Category (Pie Chart)</h2>
-<div>
-    {{ pie_chart | safe }}
-</div>
-
-<h2>Expenses by Category (Bar Chart)</h2>
-<div>
-    {{ bar_chart | safe }}
-</div>
 {% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const categoryFilter = document.getElementById('filter-category');
+        const startDateFilter = document.getElementById('filter-date-start');
+        const endDateFilter = document.getElementById('filter-date-end');
+        const tableBody = document.getElementById('expenses-table-body');
+
+        function filterTable() {
+            const selectedCategory = categoryFilter.value.toLowerCase();
+            const startDate = new Date(startDateFilter.value);
+            const endDate = new Date(endDateFilter.value);
+
+            const rows = tableBody.getElementsByTagName('tr');
+            for (let row of rows) {
+                const category = row.cells[2].innerText.toLowerCase();
+                const date = new Date(row.cells[3].innerText);
+
+                const matchesCategory = !selectedCategory || category === selectedCategory;
+                const matchesDate = (!startDateFilter.value || date >= startDate) &&
+                                    (!endDateFilter.value || date <= endDate);
+
+                row.style.display = matchesCategory && matchesDate ? '' : 'none';
+            }
+        }
+
+        categoryFilter.addEventListener('change', filterTable);
+        startDateFilter.addEventListener('change', filterTable);
+        endDateFilter.addEventListener('change', filterTable);
+    });
+</script>
 {% endblock %}
