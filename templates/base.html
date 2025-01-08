@@ -54,7 +54,7 @@
             <div class="transaction-container">
                 <ul class="transaction-list">
                     {% if expenses %}
-                        {% for expense in expenses[:10] %} <!-- Show last 10 expenses -->
+                        {% for expense in expenses|reverse %} 
                             <li class="transaction-item">
                                 {% set category_icons = {
                                     "Food": "🍔",

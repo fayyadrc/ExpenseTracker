@@ -1,3 +1,5 @@
+// Modified date handling in JavaScript
+
 // Define toggleFields globally
 function toggleFields() {
     const actionType = document.getElementById('action_type').value;
@@ -17,33 +19,61 @@ function toggleFields() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Add event listener for action type change
     const actionTypeSelect = document.getElementById('action_type');
     if (actionTypeSelect) {
         actionTypeSelect.addEventListener('change', toggleFields);
     }
 
-    // Form submission handling
     const form = document.querySelector("form");
     if (form) {
         form.addEventListener("submit", function (event) {
             event.preventDefault();
             const formData = new FormData(form);
+            
+            // Convert date to the format "2 January 2025"
+            const dateInput = formData.get('date');
+            if (dateInput) {
+                const dateObj = new Date(dateInput);
+                if (isNaN(dateObj.getTime())) {
+                    console.error("Invalid date");
+                    alert("Please enter a valid date.");
+                    return; // Prevent further processing
+                }
+                const day = dateObj.getDate();
+                const month = dateObj.toLocaleString('en-US', { month: 'long' });
+                const year = dateObj.getFullYear();
+                const formattedDate = `${day} ${month} ${year}`;
+                formData.set('date', formattedDate);
+            }
+
+            console.log('Sending form data:', Object.fromEntries(formData));
+
             fetch(form.action, {
                 method: "POST",
-                body: formData
-            }).then(response => {
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        if (text === "Insufficient funds") {
-                            const modal = new bootstrap.Modal(document.getElementById("insufficientFundsModal"));
-                            modal.show();
-                        }
-                    });
-                } else {
-                    window.location.reload();
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
                 }
-            }).catch(error => console.error("Error:", error));
+            })
+            .then(response => response.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.error) {
+                        console.error("Server error:", data.error);
+                        alert(data.error);
+                    } else {
+                        window.location.reload();
+                    }
+                } catch (e) {
+                    console.error("Parsing error:", e);
+                    alert("An error occurred while processing your request.");
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An error occurred while processing your request.");
+            });
         });
     }
 
@@ -51,77 +81,54 @@ document.addEventListener("DOMContentLoaded", function () {
     const darkModeToggle = document.getElementById('darkModeToggleProfile');
     if (darkModeToggle) {
         darkModeToggle.addEventListener('click', function () {
-            document.body.classList.toggle('dark-mode');
-            const cards = document.querySelectorAll('.card');
-            const formFields = document.querySelectorAll('.form-control, .form-select');
-
-            // Toggle classes for cards
-            cards.forEach(card => {
-                if (document.body.classList.contains('dark-mode')) {
-                    card.classList.add('bg-dark', 'text-light');
-                    card.classList.remove('bg-light', 'text-dark');
-                } else {
-                    card.classList.add('bg-light', 'text-dark');
-                    card.classList.remove('bg-dark', 'text-light');
-                }
-            });
-
-            // Toggle classes for form fields
-            formFields.forEach(field => {
-                field.classList.toggle('bg-dark', document.body.classList.contains('dark-mode'));
-                field.classList.toggle('text-light', document.body.classList.contains('dark-mode'));
-                field.classList.toggle('bg-light', !document.body.classList.contains('dark-mode'));
-                field.classList.toggle('text-dark', !document.body.classList.contains('dark-mode'));
-            });
-
-            // Toggle classes for sidebars
-            const leftSidebar = document.querySelector('.left-sidebar');
-            const rightSidebar = document.querySelector('.right-sidebar');
-            if (leftSidebar) leftSidebar.classList.toggle('bg-dark');
-            if (rightSidebar) rightSidebar.classList.toggle('bg-dark');
-            if (leftSidebar) leftSidebar.classList.toggle('text-light');
-            if (rightSidebar) rightSidebar.classList.toggle('text-light');
+            const isDarkMode = document.body.classList.toggle('dark-mode');
+            updateThemeClasses(isDarkMode);
 
             // Store the theme preference
-            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
         });
     }
 
     // Check the stored theme preference on page load
-    if (localStorage.getItem('theme') === 'dark') {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
         document.body.classList.add('dark-mode');
-
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.classList.add('bg-dark', 'text-light');
-            card.classList.remove('bg-light', 'text-dark');
-        });
-
-        const formFields = document.querySelectorAll('.form-control, .form-select');
-        formFields.forEach(field => {
-            field.classList.add('bg-dark', 'text-light');
-            field.classList.remove('bg-light', 'text-dark');
-        });
-
-        const leftSidebar = document.querySelector('.left-sidebar');
-        const rightSidebar = document.querySelector('.right-sidebar');
-        if (leftSidebar) {
-            leftSidebar.classList.add('bg-dark', 'text-light');
-        }
-        if (rightSidebar) {
-            rightSidebar.classList.add('bg-dark', 'text-light');
-        }
+        updateThemeClasses(true);
     } else {
-        const cards = document.querySelectorAll('.card');
-        cards.forEach(card => {
-            card.classList.add('bg-light', 'text-dark');
-            card.classList.remove('bg-dark', 'text-light');
-        });
-
-        const formFields = document.querySelectorAll('.form-control, .form-select');
-        formFields.forEach(field => {
-            field.classList.add('bg-light', 'text-dark');
-            field.classList.remove('bg-dark', 'text-light');
-        });
+        updateThemeClasses(false);
     }
 });
+
+// Function to update theme classes
+function updateThemeClasses(isDark) {
+    const cards = document.querySelectorAll('.card');
+    const formFields = document.querySelectorAll('.form-control, .form-select');
+    const leftSidebar = document.querySelector('.left-sidebar');
+    const rightSidebar = document.querySelector('.right-sidebar');
+
+    // Update classes for cards
+    cards.forEach(card => {
+        card.classList.toggle('bg-dark', isDark);
+        card.classList.toggle('text-light', isDark);
+        card.classList.toggle('bg-light', !isDark);
+        card.classList.toggle('text-dark', !isDark);
+    });
+
+    // Update classes for form fields
+    formFields.forEach(field => {
+        field.classList.toggle('bg-dark', isDark);
+        field.classList.toggle('text-light', isDark);
+        field.classList.toggle('bg-light', !isDark);
+        field.classList.toggle('text-dark', !isDark);
+    });
+
+    // Update classes for sidebars
+    if (leftSidebar) {
+        leftSidebar.classList.toggle('bg-dark', isDark);
+        leftSidebar.classList.toggle('text-light', isDark);
+    }
+    if (rightSidebar) {
+        rightSidebar.classList.toggle('bg-dark', isDark);
+        rightSidebar.classList.toggle('text-light', isDark);
+    }
+}
