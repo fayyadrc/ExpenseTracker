@@ -341,7 +341,6 @@ class BudgetTracker:
                 "line_chart": px.line(title="Error Generating Charts").to_html(full_html=False),
                 "bar_chart": px.bar(title="Error Generating Charts").to_html(full_html=False)
             }
-
 # Flask Routes
 @app.route("/", methods=["GET"])
 def default():
@@ -592,19 +591,69 @@ def index():
         return redirect(url_for("index"))
 
 
-@app.route("/expenses", methods=["GET", "POST"])
+
+
+
+
+@app.route("/expenses", methods=["GET"])
 def show_expenses():
     user_id = session.get("user_id")
-    tracker = BudgetTracker(user_id=session.get("user_id"))
-
     if not user_id:
         return redirect(url_for("login"))
+
+    tracker = BudgetTracker(user_id=user_id)
+
     try:
-        expenses = tracker.expenses.find({"user_id": user_id})
-        return render_template("expenses.html", expenses=expenses)
+        # Get filter parameters from request args
+        selected_category = request.args.get("category", "").strip()
+        start_date = request.args.get("start_date", "").strip()
+        end_date = request.args.get("end_date", "").strip()
+
+        # Build the query
+        query = {"user_id": user_id}
+        if selected_category:
+            query["category"] = selected_category
+
+        # Handle date filtering
+        date_filter = {}
+        date_format = "%d %B %Y"  # Your stored date format
+        if start_date:
+            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")  # Parse from 'YYYY-MM-DD'
+            date_filter["$gte"] = start_date_obj.strftime(date_format)
+        if end_date:
+            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")  # Parse from 'YYYY-MM-DD'
+            date_filter["$lte"] = end_date_obj.strftime(date_format)
+        if date_filter:
+            query["date"] = date_filter
+
+        # Fetch filtered expenses
+        expenses_cursor = tracker.expenses_collection.find(query)
+        expenses = list(expenses_cursor)
+
+        # Fetch unique categories for the dropdown
+        unique_categories_cursor = tracker.expenses_collection.distinct("category", {"user_id": user_id})
+        unique_categories = list(unique_categories_cursor)
+
+        return render_template(
+            "expenses.html",
+            expenses=expenses,
+            unique_categories=unique_categories,
+        )
     except Exception as e:
         return f"Error loading expenses: {e}", 500
 
+
+
+@app.route('/settings', methods=['GET'])
+def settings():
+    return render_template('index.html')
+
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    session.clear()
+    flash("You have been logged out.")
+    return redirect(url_for("login"))
 
 @app.route('/reports', methods=["GET", "POST"])
 def show_reports():
@@ -624,19 +673,5 @@ def show_reports():
         )
     except Exception as e:
         return f"Error generating reports: {e}", 500
-
-
-@app.route('/settings', methods=['GET'])
-def settings():
-    return render_template('index.html')
-
-
-@app.route("/logout", methods=["GET"])
-def logout():
-    session.clear()
-    flash("You have been logged out.")
-    return redirect(url_for("login"))
-
-
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

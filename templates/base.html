@@ -40,14 +40,14 @@
     </div>
 
     <div class="right-sidebar">
-        <div class="profile">
-            <div class="profile-pic">
-                <img src="{{ url_for('static', filename='images/profile.jpg') }}" alt="Profile Picture"
-                     onerror="this.src='https://ui-avatars.com/api/?name={{ username|replace(' ', '+') }}&background=0000FF&color=FFFFFF'">
+            <div class="profile">
+                <div class="profile-pic">
+                    <img src="{{ url_for('static', filename='images/profile.jpg') }}" alt="Profile Picture"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ username|replace(' ', '+') }}&background=0000FF&color=FFFFFF'">
+                </div>
+                <span class="profile-name">Welcome, {{ username }}</span>
+                <i id="darkModeToggleProfile" class="fa-solid fa-moon fa-2x"></i>
             </div>
-            <span class="profile-name">Welcome, {{ username }}</span>
-            <i id="darkModeToggleProfile" class="fa-solid fa-moon fa-2x"></i>
-        </div>
         <section class="transactions">
             <h3>Recent Expenses</h3>
     
