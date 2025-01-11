@@ -23,7 +23,7 @@ A comprehensive full-stack web application for personal finance management built
 
 - **Backend:** Python Flask
 - **Database:** MongoDB Atlas
-- **Frontend:** HTML/CSS
+- **Frontend:** HTML/CSS (Boostrap)
 - **Data Visualization:** Plotly
 - **Data Processing:** Pandas
 - **Authentication:** Werkzeug Security
