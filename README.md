@@ -1,7 +1,9 @@
 # Budget Tracker Application
 
 A comprehensive full-stack web application for personal finance management built with Python Flask and MongoDB. Track expenses, visualize spending patterns, and manage your budget effectively.
-
+<img width="1512" alt="ExpenseTracker_HomePage" src="https://github.com/user-attachments/assets/03424a12-ed19-4178-bfa0-c8cb819dab3b" />
+<img width="1512" alt="ExpenseTracker_ExpensesHistory" src="https://github.com/user-attachments/assets/f890f919-05c2-4a2d-bc67-c15e128b010" />
+<img width="1496" alt="ExpenseTracker_Reports" src="https://github.com/user-attachments/assets/b0d13be4-34c8-4fb6-b194-1b805efa8b6d" />
 ## Features
 
 - 👤 Secure user authentication and registration
