@@ -11,6 +11,7 @@ import plotly.express as px
 from flask_cors import CORS
 from dotenv import load_dotenv
 from datetime import datetime
+from dateutil import parser
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -37,7 +38,7 @@ class BudgetTracker:
         self.withdrawals_collection = None
         self.transactions_collection = None
 
-        # MongoDB Connection
+        #mongoDB connection
         username = urllib.parse.quote_plus(os.getenv("DB_USER"))
         password = urllib.parse.quote_plus(os.getenv("DB_PASSWORD"))
         connection_string = f"mongodb+srv://{username}:{
@@ -57,71 +58,16 @@ class BudgetTracker:
             print(f"Error connecting to MongoDB: {e}")
 
     def format_date(self, date_str):
-        """
-        Format date to "2 January 2025" format
-        """
         try:
-            # If it's already a datetime object, just format it
             if isinstance(date_str, datetime):
-                return date_str.strftime("%d %B %Y")
+                return date_str.strftime('%Y-%m-%d')
 
-            # Try parsing with multiple formats
-            formats_to_try = [
-                "%d %B %Y",      # "1 January 2025"
-                "%Y-%m-%d",      # "2025-01-01"
-                "%B %d, %Y",     # "January 1, 2025"
-                "%d-%m-%Y",      # "01-01-2025"
-                "%m/%d/%Y"       # "01/01/2025"
-            ]
-
-            for date_format in formats_to_try:
-                try:
-                    date_obj = datetime.strptime(date_str, date_format)
-                    return date_obj.strftime("%d %B %Y")
-                except ValueError:
-                    continue
-
-            # If none of the explicit formats work, try dateutil parser as fallback
-            from dateutil import parser
             date_obj = parser.parse(date_str)
-            return date_obj.strftime("%d %B %Y")
+            return date_obj.strftime('%Y-%m-%d')
 
         except Exception as e:
             print(f"Error formatting date: {e}")
             return None
-
-            """
-            Enhanced date formatting to handle multiple input formats including '1 January 2025'
-            """
-            try:
-                formats_to_try = [
-                    "%d %B %Y",      # "1 January 2025"
-                    "%Y-%m-%d",      # "2025-01-01"
-                    "%B %d, %Y",     # "January 1, 2025"
-                    "%d-%m-%Y",      # "01-01-2025"
-                    "%m/%d/%Y"       # "01/01/2025"
-                ]
-
-                # If it's already a datetime object, just format it
-                if isinstance(date_str, datetime):
-                    return date_str.strftime("%d %B %Y")
-
-                # Try each format until one works
-                for date_format in formats_to_try:
-                    try:
-                        date_obj = datetime.strptime(date_str, date_format)
-                        return date_obj.strftime("%d %B %Y")
-                    except ValueError:
-                        continue
-
-                # If none of the explicit formats work, try dateutil parser
-                from dateutil import parser
-                date_obj = parser.parse(date_str)
-                return date_obj.strftime("%d %B %Y")
-
-            except Exception as e:
-                print(f"Error formatting date: {e}")
-                return "Invalid date"
 
     def load_user_data(self):
         try:
@@ -147,7 +93,7 @@ class BudgetTracker:
             if not user_data.get("user_id"):
                 user_data["user_id"] = str(uuid.uuid4())
 
-            # Initialize all balance fields
+            
             user_data.setdefault("balance", 0)
             user_data.setdefault("total_balance", 0)
             user_data.setdefault("current_balance", 0)
@@ -177,11 +123,10 @@ class BudgetTracker:
     def update_balances(self):
         try:
             total_expenses = self.total_expenses()
-            self.total_balance = self.__balance  # This is the running total
+            self.total_balance = self.__balance
             self.current_balance = self.__balance - \
-                total_expenses  # This is balance minus expenses
+                total_expenses
 
-            # Update the user document with new balances
             self.users_collection.update_one(
                 {"user_id": self.user_id},
                 {
@@ -247,9 +192,6 @@ class BudgetTracker:
             return "Error processing withdrawal"
 
     def add_expense(self, amount, title, category, date):
-        """
-        Add an expense transaction with enhanced validation and error handling
-        """
         try:
             if amount <= 0:
                 return "Invalid expense amount. Please enter a positive value."
@@ -273,7 +215,6 @@ class BudgetTracker:
             self.expenses_collection.insert_one(expense)
             self.__balance -= amount
 
-            # Update the users collection with the new balance
             self.users_collection.update_one(
                 {"user_id": self.user_id},
                 {"$inc": {"balance": -amount}}
@@ -297,43 +238,70 @@ class BudgetTracker:
 
     def generate_charts(self):
         try:
-            expenses = list(self.expenses_collection.find(
-                {"user_id": self.user_id}))
+            expenses = list(self.expenses_collection.find({"user_id": self.user_id}))
             if not expenses:
+                print("No expenses found in the database.")
                 return {
                     "pie_chart": px.pie(title="No Expenses Recorded").to_html(full_html=False),
                     "line_chart": px.line(title="No Expenses Recorded").to_html(full_html=False),
                     "bar_chart": px.bar(title="No Expenses Recorded").to_html(full_html=False)
                 }
 
+            # Create DataFrame
             expenses_df = pd.DataFrame(expenses)
-            expenses_df['Amount'] = pd.to_numeric(
-                expenses_df['amount'], errors='coerce')
-            expenses_df['Date'] = pd.to_datetime(
-                expenses_df['date'], format="%d %B %Y", errors='coerce')
-            expenses_df['Formatted Date'] = expenses_df['Date'].dt.strftime(
-                "%d %B %Y")
+            expenses_df['Amount'] = pd.to_numeric(expenses_df['amount'], errors='coerce')
+            expenses_df['Date'] = pd.to_datetime(expenses_df['date'], errors='coerce')
 
-            category_counts = expenses_df.groupby(
-                "category")["Amount"].sum().reset_index()
-            pie_chart = px.pie(category_counts, values='Amount',
-                               names='category', title="Expenses by Category")
+            # Drop invalid data
+            expenses_df = expenses_df.dropna(subset=['Amount', 'Date'])
+            if expenses_df.empty:
+                print("No valid expenses data after cleaning.")
+                return {
+                    "pie_chart": px.pie(title="No Valid Data").to_html(full_html=False),
+                    "line_chart": px.line(title="No Valid Data").to_html(full_html=False),
+                    "bar_chart": px.bar(title="No Valid Data").to_html(full_html=False)
+                }
 
-            expenses_df['YearMonth'] = expenses_df['Date'].dt.to_period(
-                'M').astype(str)
-            monthly_trends = expenses_df.groupby(
-                "YearMonth")["Amount"].sum().reset_index()
-            line_chart = px.line(monthly_trends, x="YearMonth",
-                                 y="Amount", title="Monthly Expense Trends", markers=True)
+            # Pie and bar charts
+            category_counts = expenses_df.groupby("category")["Amount"].sum().reset_index()
+            if category_counts.empty:
+                print("No data available for category charts.")
+                return {
+                    "pie_chart": px.pie(title="No Data Available").to_html(full_html=False),
+                    "line_chart": px.line(title="No Data Available").to_html(full_html=False),
+                    "bar_chart": px.bar(title="No Data Available").to_html(full_html=False)
+                }
 
-            bar_chart = px.bar(category_counts, x='category', y='Amount',
-                               title="Expenses by Category", color="category")
+            pie_chart = px.pie(category_counts, values='Amount', names='category', title="Expenses by Category")
+            bar_chart = px.bar(category_counts, x='category', y='Amount', title="Expenses by Category", color="category")
+
+            # Line chart for daily trends
+            expenses_df['YearMonthDay'] = expenses_df['Date'].dt.strftime('%y%m%d')
+            daily_trends = expenses_df.groupby("YearMonthDay")["Amount"].sum().reset_index()
+            daily_trends = daily_trends.sort_values('YearMonthDay')
+
+            if daily_trends.empty:
+                print("No data available for daily trends.")
+                return {
+                    "pie_chart": pie_chart.to_html(full_html=False),
+                    "line_chart": px.line(title="No Data Available").to_html(full_html=False),
+                    "bar_chart": bar_chart.to_html(full_html=False)
+                }
+
+            line_chart = px.line(
+                daily_trends,
+                x="YearMonthDay",
+                y="Amount",
+                title="Daily Expense Trends (YYMMDD)",
+                markers=True
+            )
 
             return {
                 "pie_chart": pie_chart.to_html(full_html=False),
                 "line_chart": line_chart.to_html(full_html=False),
                 "bar_chart": bar_chart.to_html(full_html=False)
             }
+
         except Exception as e:
             print(f"Error generating charts: {e}")
             return {
@@ -344,9 +312,7 @@ class BudgetTracker:
 # Flask Routes
 @app.route("/", methods=["GET"])
 def default():
-    # Add this line for debugging
-    print(f"Session during default route: {session}")
-    if session.get("logged_in"):  # Check directly for 'logged_in' in session
+    if session.get("logged_in"):
         print("Logged in, redirecting to index.")
         return redirect(url_for("index"))
     print("Not logged in, redirecting to login.")
@@ -412,7 +378,6 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Handle user login."""
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
@@ -451,14 +416,12 @@ def login():
 
 @app.route("/index", methods=["GET", "POST"])
 def index():
-    # Check authentication
     if "user_id" not in session:
         print("No user_id in session")
         if request.headers.get('Accept') == 'application/json':
             return jsonify({"error": "Please login first"})
         return redirect(url_for("login"))
 
-    # Initialize budget tracker
     tracker = BudgetTracker(
         user_id=session["user_id"],
         username=session.get("username")
@@ -468,12 +431,10 @@ def index():
         if request.method == "POST":
             print("Received form data:", request.form)
 
-            # Get basic form data
             action_type = request.form.get("action_type")
             amount_str = request.form.get("amount", "").strip()
             date_str = request.form.get("date", "").strip()
 
-            # Validate required fields
             if not all([action_type, amount_str, date_str]):
                 error_msg = "All fields (action type, amount, and date) are required."
                 if request.headers.get('Accept') == 'application/json':
@@ -481,10 +442,9 @@ def index():
                 flash(error_msg)
                 return redirect(url_for("index"))
 
-            # Parse amount and date
             try:
                 amount = float(amount_str)
-                # Date will be handled by the tracker's format_date method
+
             except ValueError as e:
                 error_msg = "Please enter a valid number for amount"
                 if request.headers.get('Accept') == 'application/json':
@@ -521,7 +481,6 @@ def index():
                     flash(error_msg)
                     return redirect(url_for("index"))
 
-                # Handle operation result
                 if isinstance(result, str) and any(x in result for x in ["Error", "Invalid", "Insufficient"]):
                     if request.headers.get('Accept') == 'application/json':
                         return jsonify({"error": result})
@@ -568,7 +527,6 @@ def index():
                 "bar_chart": Markup(charts["bar_chart"]),
             }
 
-            # Return JSON if requested
             if request.headers.get('Accept') == 'application/json':
                 return jsonify(template_data)
 
@@ -591,10 +549,6 @@ def index():
         return redirect(url_for("index"))
 
 
-
-
-
-
 @app.route("/expenses", methods=["GET"])
 def show_expenses():
     user_id = session.get("user_id")
@@ -604,12 +558,10 @@ def show_expenses():
     tracker = BudgetTracker(user_id=user_id)
 
     try:
-        # Get filter parameters from request args
         selected_category = request.args.get("category", "").strip()
         start_date = request.args.get("start_date", "").strip()
         end_date = request.args.get("end_date", "").strip()
 
-        # Build the query
         query = {"user_id": user_id}
         if selected_category:
             query["category"] = selected_category
@@ -617,12 +569,11 @@ def show_expenses():
         # Handle date filtering
         date_filter = {}
         date_format = "%d %B %Y"  # Your stored date format
+        # In show_expenses route
         if start_date:
-            start_date_obj = datetime.strptime(start_date, "%Y-%m-%d")  # Parse from 'YYYY-MM-DD'
-            date_filter["$gte"] = start_date_obj.strftime(date_format)
+            date_filter["$gte"] = parser.parse(start_date).isoformat() + 'Z'
         if end_date:
-            end_date_obj = datetime.strptime(end_date, "%Y-%m-%d")  # Parse from 'YYYY-MM-DD'
-            date_filter["$lte"] = end_date_obj.strftime(date_format)
+            date_filter["$lte"] = parser.parse(end_date).isoformat() + 'Z'
         if date_filter:
             query["date"] = date_filter
 
@@ -631,7 +582,8 @@ def show_expenses():
         expenses = list(expenses_cursor)
 
         # Fetch unique categories for the dropdown
-        unique_categories_cursor = tracker.expenses_collection.distinct("category", {"user_id": user_id})
+        unique_categories_cursor = tracker.expenses_collection.distinct(
+            "category", {"user_id": user_id})
         unique_categories = list(unique_categories_cursor)
 
         return render_template(
@@ -643,17 +595,33 @@ def show_expenses():
         return f"Error loading expenses: {e}", 500
 
 
-
-@app.route('/settings', methods=['GET'])
+@app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    return render_template('index.html')
+    if request.method == 'POST':
+        # Handle form submission
+        pass
+    return render_template('settings.html')
 
 
-@app.route("/logout", methods=["GET"])
-def logout():
-    session.clear()
-    flash("You have been logged out.")
-    return redirect(url_for("login"))
+#Pass username and expense list for right sidebar in all templates
+@app.context_processor
+def global_data():
+    if not session.get("user_id"):
+        return {"username": None, "expenses": []}
+    
+    try:
+        tracker = BudgetTracker(
+            user_id=session.get("user_id"),
+            username=session.get("username")
+        )
+        username = session.get("username")
+        expenses = list(tracker.expenses_collection.find(
+                    {"user_id": session.get("user_id")}
+                ).sort("date", -1))
+        return {"username": username, "expenses": expenses}
+    except Exception as e:
+        print(f"Error in context processor: {e}")
+        return {"username": None, "expenses": []}
 
 @app.route('/reports', methods=["GET", "POST"])
 def show_reports():
@@ -663,7 +631,7 @@ def show_reports():
         return redirect(url_for("login"))
 
     try:
-        charts = tracker.generate_charts(user_id=user_id)
+        charts = tracker.generate_charts()
 
         return render_template(
             'reports.html',
@@ -673,5 +641,12 @@ def show_reports():
         )
     except Exception as e:
         return f"Error generating reports: {e}", 500
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    session.clear()
+    flash("You have been logged out.")
+    return redirect(url_for("login"))
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

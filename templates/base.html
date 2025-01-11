@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,17 +18,17 @@
 
 <body>
     <div class="left-sidebar">
-    <h1 class="text-center" style="margin-bottom: 1px;">Expense</h1>
-    <h1 class="text-center" style="margin-top: 0;">Tracker</h1>
+        <h1 class="text-center" style="margin-bottom: 1px;">Expense</h1>
+        <h1 class="text-center" style="margin-top: 0;">Tracker</h1>
 
-    <nav>
-        <a href="{{ url_for('index') }}">🏠 Home</a>
-        <a href="{{ url_for('show_expenses') }}">💸 Expenses</a>
-        <a href="{{ url_for('show_reports') }}">📊 Reports</a>
-        <a href="{{ url_for('settings') }}">🔧 Settings</a>
-    </nav>
-    <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
-</div>
+        <nav>
+            <a href="{{ url_for('index') }}">🏠 Home</a>
+            <a href="{{ url_for('show_expenses') }}">💸 Expenses</a>
+            <a href="{{ url_for('show_reports') }}">📊 Reports</a>
+            <a href="{{ url_for('settings') }}">🔧 Settings</a>
+        </nav>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+    </div>
 
     <div class="content">
         <div class="container-fluid">
@@ -40,65 +41,102 @@
     </div>
 
     <div class="right-sidebar">
-            <div class="profile">
-                <div class="profile-pic">
-                    <img src="{{ url_for('static', filename='images/profile.jpg') }}" alt="Profile Picture"
-                         onerror="this.src='https://ui-avatars.com/api/?name={{ username|replace(' ', '+') }}&background=0000FF&color=FFFFFF'">
-                </div>
-                <span class="profile-name">Welcome, {{ username }}</span>
-                <i id="darkModeToggleProfile" class="fa-solid fa-moon fa-2x"></i>
+        <div class="profile dropdown">
+            <div class="profile-pic dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="{{ url_for('static', filename='images/profile.jpg') }}" alt="Profile Picture"
+                     onerror="this.src='https://ui-avatars.com/api/?name={{ username|replace(' ', '+') }}&background=0000FF&color=FFFFFF'">
             </div>
+            <span class="profile-name">Welcome, {{ username }}</span>
+            <i id="darkModeToggleProfile" class="fa-solid fa-moon fa-2x"></i>
+        
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#">👤 View Profile</a></li>
+                <li><a class="dropdown-item" href="#">⚙️ Settings</a></li>
+                <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">🚪 Logout</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#manageCategoriesModal">📝 Manage Categories</a></li>
+            </ul>
+        </div>
+        
+        <!-- Manage Categories Modal -->
+        <div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="manageCategoriesModalLabel">Manage Categories</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addCategoryForm" class="mb-3">
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="newCategoryName" placeholder="Category name">
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="newCategoryEmoji" placeholder="Emoji (optional)">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Add Category</button>
+                        </form>
+                        <div class="dropdown-divider"></div>
+                        <div id="categoriesList" class="overflow-auto" style="max-height: 200px;">
+                            <!-- Categories will be loaded here dynamically -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
         <section class="transactions">
             <h3>Recent Expenses</h3>
-    
+
             <div class="transaction-container">
                 <ul class="transaction-list">
                     {% if expenses %}
-                        {% for expense in expenses|reverse %} 
-                            <li class="transaction-item">
-                                {% set category_icons = {
-                                    "Food": "🍔",
-                                    "Transportation": "🚗",
-                                    "Entertainment": "🎱",
-                                    "Shopping": "🛒",
-                                    "Gifts": "🎁",
-                                    "Utilities": "🧰",
-                                    "Other": "⚡️"
-                                } %}
-                                <div class="transaction-content">
-                                    <div class="transaction-left">
-                                        <span class="icon">
-                                            {{ category_icons[expense.category] if expense.category in category_icons else "⚡️" }}
-                                        </span>
-                                        <div class="transaction-details">
-                                            <span class="title">{{ expense.title }}</span>
-                                            <span class="date">{{ expense.date }}</span>
-                                        </div>
-                                    </div>
-                                    <span class="amount {% if expense.amount < 0 %}negative{% endif %}">
-                                        {% if expense.amount < 0 %}
-                                            - AED {{ expense.amount|abs }}
-                                        {% else %}
-                                            AED {{ expense.amount }}
-                                        {% endif %}
-                                    </span>
+                    {% for expense in expenses|reverse %}
+                    <li class="transaction-item">
+                        {% set category_icons = {
+                        "Food": "🍔",
+                        "Transportation": "🚗",
+                        "Entertainment": "🎱",
+                        "Shopping": "🛒",
+                        "Gifts": "🎁",
+                        "Utilities": "🧰",
+                        "Other": "⚡️"
+                        } %}
+                        <div class="transaction-content">
+                            <div class="transaction-left">
+                                <span class="icon">
+                                    {{ category_icons[expense.category] if expense.category in category_icons else "⚡️"
+                                    }}
+                                </span>
+                                <div class="transaction-details">
+                                    <span class="title">{{ expense.title }}</span>
+                                    <span class="date">{{ expense.date }}</span>
                                 </div>
-                            </li>
-                        {% endfor %}
-                    {% else %}
-                        <li class="transaction-item">
-                            <div class="transaction-content">
-                                <span class="icon">⚡️</span>
-                                <span>No recent expenses available</span>
                             </div>
-                        </li>
+                            <span class="amount {% if expense.amount < 0 %}negative{% endif %}">
+                                {% if expense.amount < 0 %} - AED {{ expense.amount|abs }} {% else %} AED {{
+                                    expense.amount }} {% endif %} </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                    {% else %}
+                    <li class="transaction-item">
+                        <div class="transaction-content">
+                            <span class="icon">⚡️</span>
+                            <span>No recent expenses available</span>
+                        </div>
+                    </li>
                     {% endif %}
                 </ul>
             </div>
         </section>
     </div>
-    
-</div>
+
+    </div>
 
 
 </body>

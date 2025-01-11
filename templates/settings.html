@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h2 class="mb-4">Settings</h2>
+            
+            <!-- Account Settings -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Account Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings') }}">
+                        <!-- Profile Information -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Profile Information</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" name="firstName" value="{{ current_user.firstName if current_user }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" name="lastName" value="{{ current_user.lastName if current_user }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Password Change -->
+                        <div class="mb-4">
+                            <h6 class="mb-3">Change Password</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword" name="currentPassword">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="newPassword" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword" name="newPassword">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Display Preferences -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Display Preferences</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label d-block">Theme</label>
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="theme" id="lightTheme" checked>
+                            <label class="btn btn-outline-primary" for="lightTheme">Light</label>
+                            <input type="radio" class="btn-check" name="theme" id="darkTheme">
+                            <label class="btn btn-outline-primary" for="darkTheme">Dark</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="currency" class="form-label">Default Currency</label>
+                        <select class="form-select" id="currency" name="currency">
+                            <option value="AED" selected>AED (UAE Dirham)</option>
+                            <option value="USD">USD (US Dollar)</option>
+                            <option value="EUR">EUR (Euro)</option>
+                            <option value="GBP">GBP (British Pound)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Settings -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Notification Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailNotifications">
+                        <label class="form-check-label" for="emailNotifications">
+                            Email Notifications
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="expenseAlerts">
+                        <label class="form-check-label" for="expenseAlerts">
+                            Expense Alerts
+                        </label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="budgetReminders">
+                        <label class="form-check-label" for="budgetReminders">
+                            Budget Reminders
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Data Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" type="button">Export Transaction History</button>
+                        <form method="POST" action="{{ url_for('settings') }}" class="d-inline" onsubmit="return confirm('Are you sure you want to clear all transaction history? This action cannot be undone.');">
+                            <input type="hidden" name="action" value="clear_transactions">
+                            <button type="submit" class="btn btn-outline-warning w-100">Clear Transaction History</button>
+                        </form>
+                        <button class="btn btn-outline-danger" type="button">Delete Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
