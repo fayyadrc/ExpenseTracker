@@ -1,4 +1,3 @@
-// Modified date handling in JavaScript
 
 // Define toggleFields globally
 function toggleFields() {
@@ -29,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         form.addEventListener("submit", function (event) {
             event.preventDefault();
             const formData = new FormData(form);
-            
+
             // Convert date to the format "2 January 2025"
             const dateInput = formData.get('date');
             if (dateInput) {
@@ -55,25 +54,25 @@ document.addEventListener("DOMContentLoaded", function () {
                     'Accept': 'application/json'
                 }
             })
-            .then(response => response.text())
-            .then(text => {
-                try {
-                    const data = JSON.parse(text);
-                    if (data.error) {
-                        console.error("Server error:", data.error);
-                        alert(data.error);
-                    } else {
-                        window.location.reload();
+                .then(response => response.text())
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.error) {
+                            console.error("Server error:", data.error);
+                            alert(data.error);
+                        } else {
+                            window.location.reload();
+                        }
+                    } catch (e) {
+                        console.error("Parsing error:", e);
+                        alert("An error occurred while processing your request.");
                     }
-                } catch (e) {
-                    console.error("Parsing error:", e);
+                })
+                .catch(error => {
+                    console.error("Error:", error);
                     alert("An error occurred while processing your request.");
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                alert("An error occurred while processing your request.");
-            });
+                });
         });
     }
 
@@ -130,5 +129,99 @@ function updateThemeClasses(isDark) {
     if (rightSidebar) {
         rightSidebar.classList.toggle('bg-dark', isDark);
         rightSidebar.classList.toggle('text-light', isDark);
+    }
+}
+
+//Manage categories modal popup
+
+// Initialize the modal
+document.addEventListener('DOMContentLoaded', function () {
+    loadCategories();
+});
+
+// Handle form submission
+function handleAddCategory(event) {
+    event.preventDefault();
+
+    const categoryName = document.getElementById('newCategoryName').value;
+    const categoryEmoji = document.getElementById('newCategoryEmoji').value;
+
+    if (!categoryName) {
+        alert('Please enter a category name');
+        return;
+    }
+
+    // Add category to the database via fetch API
+    fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: categoryName,
+            emoji: categoryEmoji || '⚡️' // Default emoji if none provided
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Clear the form
+                document.getElementById('addCategoryForm').reset();
+                // Reload categories list
+                loadCategories();
+            } else {
+                alert('Error adding category: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding category');
+        });
+}
+
+// Load existing categories
+function loadCategories() {
+    fetch('/api/categories')
+        .then(response => response.json())
+        .then(data => {
+            const categoriesList = document.getElementById('categoriesList');
+            categoriesList.innerHTML = '';
+
+            data.forEach(category => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-item d-flex justify-content-between align-items-center p-2 border-bottom';
+                categoryElement.innerHTML = `
+                            <span>${category.emoji || '⚡️'} ${category.name}</span>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCategory('${category.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        `;
+                categoriesList.appendChild(categoryElement);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('categoriesList').innerHTML = '<p class="text-danger">Error loading categories</p>';
+        });
+}
+
+// Delete category
+function deleteCategory(categoryId) {
+    if (confirm('Are you sure you want to delete this category?')) {
+        fetch(`/api/categories/${categoryId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadCategories();
+                } else {
+                    alert('Error deleting category: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting category');
+            });
     }
 }

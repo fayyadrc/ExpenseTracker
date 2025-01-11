@@ -24,7 +24,7 @@ app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
 class BudgetTracker:
     def __init__(self, user_id=None, username=None, database_name="budget_tracker", user_collection_name="users",
                  collection_name="expenses", deposits_collection_name="deposits",
-                 withdrawals_collection_name="withdrawals", transactions_collection_name="transactions"):
+                 withdrawals_collection_name="withdrawals", transactions_collection_name="transactions", categories_collection_name="categories"):
 
         self.__balance = 0
         self.total_balance = 0
@@ -53,9 +53,64 @@ class BudgetTracker:
             self.deposits_collection = self.db[deposits_collection_name]
             self.withdrawals_collection = self.db[withdrawals_collection_name]
             self.transactions_collection = self.db[transactions_collection_name]
+            self.categories_collection = self.db[categories_collection_name]
             self.load_user_data()
+            self.init_categories()  
         except pymongo.errors.PyMongoError as e:
             print(f"Error connecting to MongoDB: {e}")
+
+    def init_categories(self):
+        """Initialize predefined categories in the database."""
+        predefined_categories = [
+            {"name": "Food", "created_by": "admin"},
+            {"name": "Transportation", "created_by": "admin"},
+            {"name": "Entertainment", "created_by": "admin"},
+            {"name": "Shopping", "created_by": "admin"},
+            {"name": "Gifts", "created_by": "admin"},
+            {"name": "Utilities", "created_by": "admin"},
+        ]
+
+        for category in predefined_categories:
+            self.categories_collection.update_one(
+                {"name": category["name"], "created_by": "admin"},
+                {"$setOnInsert": category},
+                upsert=True
+            )
+
+    def add_category(self, category_name, user_id):
+        """Add a new category for the specific user."""
+        if not category_name:
+            raise ValueError("Category name cannot be empty.")
+        existing_category = self.categories_collection.find_one(
+            {"name": category_name, "user_id": user_id}
+        )
+        if not existing_category:
+            self.categories_collection.insert_one(
+                {"name": category_name, "created_by": "user", "user_id": user_id}
+            )
+            return f"Category '{category_name}' added successfully."
+        return f"Category '{category_name}' already exists."
+
+    def get_categories(self, user_id):
+        """Retrieve all categories for the specified user."""
+        categories = self.categories_collection.find(
+            {"$or": [{"created_by": "admin"}, {"user_id": user_id}]},
+            {"_id": 0, "name": 1}
+        )
+        return [category["name"] for category in categories]
+
+    def remove_category(self, category_name, user_id):
+        """Remove a user-defined category from the database."""
+        category = self.categories_collection.find_one(
+            {"name": category_name, "created_by": user_id}
+        )
+        if category:
+            self.categories_collection.delete_one(
+                {"name": category_name, "created_by": user_id}
+            )
+            return f"Category '{category_name}' removed successfully."
+        return f"Category '{category_name}' cannot be removed (predefined or does not exist)."
+
 
     def format_date(self, date_str):
         try:
@@ -418,7 +473,7 @@ def login():
 def index():
     if "user_id" not in session:
         print("No user_id in session")
-        if request.headers.get('Accept') == 'application/json':
+        if request.headers.get("Accept") == "application/json":
             return jsonify({"error": "Please login first"})
         return redirect(url_for("login"))
 
@@ -426,7 +481,8 @@ def index():
         user_id=session["user_id"],
         username=session.get("username")
     )
-
+    user_id = session.get("user_id")
+    print(user_id)
     try:
         if request.method == "POST":
             print("Received form data:", request.form)
@@ -434,62 +490,67 @@ def index():
             action_type = request.form.get("action_type")
             amount_str = request.form.get("amount", "").strip()
             date_str = request.form.get("date", "").strip()
+            custom_category = request.form.get("custom_category", "").strip()
 
             if not all([action_type, amount_str, date_str]):
                 error_msg = "All fields (action type, amount, and date) are required."
-                if request.headers.get('Accept') == 'application/json':
+                if request.headers.get("Accept") == "application/json":
                     return jsonify({"error": error_msg})
                 flash(error_msg)
                 return redirect(url_for("index"))
 
             try:
                 amount = float(amount_str)
-
-            except ValueError as e:
-                error_msg = "Please enter a valid number for amount"
-                if request.headers.get('Accept') == 'application/json':
+            except ValueError:
+                error_msg = "Please enter a valid number for amount."
+                if request.headers.get("Accept") == "application/json":
                     return jsonify({"error": error_msg})
                 flash(error_msg)
                 return redirect(url_for("index"))
 
-            # Process different action types
             try:
                 if action_type == "transaction":
                     title = request.form.get("title", "").strip()
                     category = request.form.get("category", "").strip()
 
+                    if category == "custom" and custom_category:
+                        # Add custom category and use it
+                        tracker.add_category(custom_category, user_id=user_id)  # Pass the actual user_id
+                        category = custom_category
+
+
                     if not title or not category:
                         error_msg = "Title and category are required for transactions."
-                        if request.headers.get('Accept') == 'application/json':
+                        if request.headers.get("Accept") == "application/json":
                             return jsonify({"error": error_msg})
                         flash(error_msg)
                         return redirect(url_for("index"))
 
-                    result = tracker.add_expense(
-                        amount, title, category, date_str)
+                    result = tracker.add_expense(amount, title, category, date_str)
                     print(f"Transaction result: {result}")
+
                 elif action_type == "deposit":
                     result = tracker.deposit(amount, date_str)
                     print(f"Deposit result: {result}")
+
                 elif action_type == "withdraw":
                     result = tracker.withdraw(amount, date_str)
                     print(f"Withdrawal result: {result}")
+
                 else:
-                    error_msg = "Invalid action type"
-                    if request.headers.get('Accept') == 'application/json':
+                    error_msg = "Invalid action type."
+                    if request.headers.get("Accept") == "application/json":
                         return jsonify({"error": error_msg})
                     flash(error_msg)
                     return redirect(url_for("index"))
 
-                if isinstance(result, str) and any(x in result for x in ["Error", "Invalid", "Insufficient"]):
-                    if request.headers.get('Accept') == 'application/json':
+                if isinstance(result, str) and "Error" in result:
+                    if request.headers.get("Accept") == "application/json":
                         return jsonify({"error": result})
                     flash(result)
                 else:
-                    success_msg = (f"Expense of ${amount:.2f} added successfully!"
-                                   if action_type == "transaction"
-                                   else f"{action_type.capitalize()} of ${amount:.2f} processed successfully!")
-                    if request.headers.get('Accept') == 'application/json':
+                    success_msg = f"{action_type.capitalize()} of AED {amount:.2f} processed successfully!"
+                    if request.headers.get("Accept") == "application/json":
                         return jsonify({"message": success_msg})
                     flash(success_msg)
 
@@ -498,23 +559,23 @@ def index():
             except Exception as e:
                 error_msg = f"Error processing {action_type}: {str(e)}"
                 print(f"Processing error: {error_msg}")
-                if request.headers.get('Accept') == 'application/json':
+                if request.headers.get("Accept") == "application/json":
                     return jsonify({"error": error_msg})
                 flash(error_msg)
                 return redirect(url_for("index"))
 
         # Handle GET request
         try:
-            # Fetch expenses sorted by date
             expenses = list(tracker.expenses_collection.find(
                 {"user_id": session["user_id"]}
             ).sort("date", -1))
 
-            # Update balances and generate charts
             tracker.update_balances()
             charts = tracker.generate_charts()
 
-            # Prepare template data
+            # Fetch categories
+            categories = tracker.get_categories(user_id)
+
             template_data = {
                 "balance": tracker.get_balance(),
                 "total_balance": tracker.total_balance,
@@ -522,20 +583,21 @@ def index():
                 "total_expenses": tracker.total_expenses(),
                 "username": session.get("username"),
                 "expenses": expenses,
+                "categories": categories,  # Pass categories to template
                 "pie_chart": Markup(charts["pie_chart"]),
                 "line_chart": Markup(charts["line_chart"]),
                 "bar_chart": Markup(charts["bar_chart"]),
             }
 
-            if request.headers.get('Accept') == 'application/json':
+            if request.headers.get("Accept") == "application/json":
                 return jsonify(template_data)
 
             return render_template("index.html", **template_data)
 
         except Exception as e:
-            error_msg = "Error loading dashboard data"
-            print(f"Template error: {str(e)}")
-            if request.headers.get('Accept') == 'application/json':
+            error_msg = f"Error loading dashboard data: {str(e)}"
+            print(f"Template error: {error_msg}")
+            if request.headers.get("Accept") == "application/json":
                 return jsonify({"error": error_msg})
             flash(error_msg)
             return redirect(url_for("login"))
@@ -543,7 +605,7 @@ def index():
     except Exception as e:
         error_msg = f"An unexpected error occurred: {str(e)}"
         print(f"Unexpected error: {error_msg}")
-        if request.headers.get('Accept') == 'application/json':
+        if request.headers.get("Accept") == "application/json":
             return jsonify({"error": error_msg})
         flash(error_msg)
         return redirect(url_for("index"))
@@ -597,10 +659,24 @@ def show_expenses():
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
+    user_id = session.get("user_id")
+    tracker = BudgetTracker(user_id=session.get("user_id"))
     if request.method == 'POST':
-        # Handle form submission
-        pass
-    return render_template('settings.html')
+        action = request.form.get('action')
+        category_name = request.form.get('newCategory') or request.form.get('category')
+
+        if action == 'add_category':
+            flash(tracker.add_category(category_name, user_id), "success")
+        elif action == 'remove_category':
+            flash(tracker.remove_category(category_name, user_id), "danger")
+
+        return redirect(url_for('settings'))
+
+    # Retrieve categories for the current user
+    categories = tracker.get_categories(user_id)
+
+    return render_template('settings.html', categories=categories)
+
 
 
 #Pass username and expense list for right sidebar in all templates

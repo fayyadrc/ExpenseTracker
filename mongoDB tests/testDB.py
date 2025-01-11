@@ -12,6 +12,8 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
+#test connection
 username_env = urllib.parse.quote_plus(os.getenv("DB_USER", "default_user"))
 password_env = urllib.parse.quote_plus(os.getenv("DB_PASSWORD", "default_password"))
 connection_string = f"mongodb+srv://{username_env}:{password_env}@cluster0.mongodb.net/?retryWrites=true&w=majority"
@@ -22,3 +24,5 @@ try:
     print("Connected to MongoDB successfully.")
 except Exception as e:
     print(f"Failed to connect to MongoDB: {e}")
+
+#update collections and add to db

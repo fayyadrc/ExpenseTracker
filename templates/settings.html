@@ -52,6 +52,39 @@
                 </div>
             </div>
 
+            <!-- Manage Categories -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Manage Categories</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Add Category Form -->
+                    <form method="POST" action="{{ url_for('settings') }}">
+                        <div class="mb-3">
+                            <label for="newCategory" class="form-label">Add New Category</label>
+                            <input type="text" class="form-control" id="newCategory" name="newCategory" placeholder="Enter category name" required>
+                        </div>
+                        <button type="submit" name="action" value="add_category" class="btn btn-primary">Add Category</button>
+                    </form>
+                    <hr>
+
+                    <!-- Existing Categories -->
+                    <h6>Existing Categories</h6>
+                    <ul class="list-group">
+                        {% for category in categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ category }}
+                            <form method="POST" action="{{ url_for('settings') }}" class="d-inline">
+                                <input type="hidden" name="action" value="remove_category">
+                                <input type="hidden" name="category" value="{{ category }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
             <!-- Display Preferences -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header">
@@ -75,50 +108,6 @@
                             <option value="EUR">EUR (Euro)</option>
                             <option value="GBP">GBP (British Pound)</option>
                         </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notification Settings -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Notification Settings</h5>
-                </div>
-                <div class="card-body">
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="emailNotifications">
-                        <label class="form-check-label" for="emailNotifications">
-                            Email Notifications
-                        </label>
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="expenseAlerts">
-                        <label class="form-check-label" for="expenseAlerts">
-                            Expense Alerts
-                        </label>
-                    </div>
-                    <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="budgetReminders">
-                        <label class="form-check-label" for="budgetReminders">
-                            Budget Reminders
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Data Management -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Data Management</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" type="button">Export Transaction History</button>
-                        <form method="POST" action="{{ url_for('settings') }}" class="d-inline" onsubmit="return confirm('Are you sure you want to clear all transaction history? This action cannot be undone.');">
-                            <input type="hidden" name="action" value="clear_transactions">
-                            <button type="submit" class="btn btn-outline-warning w-100">Clear Transaction History</button>
-                        </form>
-                        <button class="btn btn-outline-danger" type="button">Delete Account</button>
                     </div>
                 </div>
             </div>

@@ -51,42 +51,13 @@
         
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="#">👤 View Profile</a></li>
-                <li><a class="dropdown-item" href="#">⚙️ Settings</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}">⚙️ Settings</a></li>
                 <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">🚪 Logout</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#manageCategoriesModal">📝 Manage Categories</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('settings') }}#manage-categories">📝 Manage Categories</a></li>
             </ul>
         </div>
         
-        <!-- Manage Categories Modal -->
-        <div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="manageCategoriesModalLabel">Manage Categories</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="addCategoryForm" class="mb-3">
-                            <div class="mb-2">
-                                <input type="text" class="form-control" id="newCategoryName" placeholder="Category name">
-                            </div>
-                            <div class="mb-2">
-                                <input type="text" class="form-control" id="newCategoryEmoji" placeholder="Emoji (optional)">
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm w-100">Add Category</button>
-                        </form>
-                        <div class="dropdown-divider"></div>
-                        <div id="categoriesList" class="overflow-auto" style="max-height: 200px;">
-                            <!-- Categories will be loaded here dynamically -->
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
         
         
         <section class="transactions">
